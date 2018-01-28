@@ -25,10 +25,12 @@ describe('state: listening', () => {
 			cleanSession: true,
 			clientId: 'client'
 		};
-		const CTX = {};
+		const CTX = { broker: (id) => id };
 		const bus = new EventEmitter({wildcard: true});
 		fsmMain(bus).testState('listening', CTX);
-		bus.emit(['brokerConnect', CONNECT.clientKey, 'req'], CONNECT);
-		expect(fsmClient._run.mock.calls[0][0]).toBe(CONNECT);
+		bus.emit(['brokerConnect', CONNECT.clientKey, 'req'], Object.assign({}, CONNECT));
+		expect(fsmClient._run.mock.calls[0][0]).toMatchObject(Object.assign({
+			broker: CONNECT.clientId
+		}, CONNECT));
 	});
 });

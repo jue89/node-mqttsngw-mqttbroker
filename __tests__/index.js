@@ -3,6 +3,14 @@ const fsmMain = require('../fsmMain.js');
 
 const Core = require('../index.js');
 
+test('convert config object to callback', () => {
+	const BROKER = {};
+	const CONFIG = { broker: BROKER };
+	Core(CONFIG)();
+	expect(CONFIG.broker).toBeInstanceOf(Function);
+	expect(CONFIG.broker()).toBe(BROKER);
+});
+
 test('start main FSM', () => {
 	const LOG = {};
 	const CONFIG = { log: LOG };

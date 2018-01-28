@@ -41,6 +41,7 @@
     "clearMocks": true
   },
   "dependencies": {
-    "edfsm": "^1.0.0"
+    "edfsm": "^1.0.0",
+    "mqtt": "^2.15.1"
   }
 }
