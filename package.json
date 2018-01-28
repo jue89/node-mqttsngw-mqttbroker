@@ -1,0 +1,46 @@
+{
+  "name": "mqttsngw-mqttbroker",
+  "version": "0.0.0",
+  "description": "MQTT-SN Gateway: Connection to MQTT Broker",
+  "main": "index.js",
+  "scripts": {
+    "test": "happiness && jest --verbose",
+    "watch": "jest --watchAll"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jue89/node-mqttsngw-mqttbroker.git"
+  },
+  "keywords": [
+    "mqttsn",
+    "dtls",
+    "sensornet"
+  ],
+  "author": "Jue <me@jue.yt>",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/jue89/node-mqttsngw-mqttbroker/issues"
+  },
+  "homepage": "https://github.com/jue89/node-mqttsngw-mqttbroker#readme",
+  "devDependencies": {
+    "eventemitter2": "^5.0.1",
+    "happiness": "^10.0.2",
+    "jest": "^22.1.4"
+  },
+  "happiness": {
+    "globals": [
+      "jest",
+      "describe",
+      "test",
+      "expect",
+      "beforeEach"
+    ]
+  },
+  "jest": {
+    "automock": false,
+    "clearMocks": true
+  },
+  "dependencies": {
+    "edfsm": "^1.0.0"
+  }
+}
