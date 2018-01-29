@@ -106,6 +106,7 @@ module.exports = (bus, log) => {
 		}
 
 		// TODO: close notify if connected is still true
-		if (ctx.connection) ctx.connection.end(true, () => end());
+		if (ctx.connection) ctx.connection.end(true, () => end(err));
+		else end();
 	});
 };
