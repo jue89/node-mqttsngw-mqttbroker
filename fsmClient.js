@@ -2,21 +2,26 @@ const FSM = require('edfsm');
 const mqtt = require('mqtt');
 module.exports = (bus, log) => {
 	return FSM({
-		fsmName: '[Core] Client',
+		fsmName: '[MQTTBroker] Client',
 		log: log,
 		input: bus,
 		output: bus,
 		firstState: 'init'
 	}).state('init', (ctx, i, o, next) => {
-		// Make sure configuration is valid
-		if (typeof ctx.broker !== 'object' || typeof ctx.broker.url !== 'string') {
-			o(['brokerConnect', ctx.clientKey, 'res'], {
-				clientKey: ctx.clientKey,
-				error: 'No valid configuration given'
-			});
-			return next(null);
+		// Try to get configuration
+		try {
+			ctx.broker = ctx.broker(ctx.clientId);
+		} catch (e) {
+			return next(e);
 		}
 
+		// Make sure configuration is valid
+		if (typeof ctx.broker !== 'object' || typeof ctx.broker.url !== 'string') {
+			next(new Error('No valid configuration given'));
+		} else {
+			next('connect');
+		}
+	}).state('connect', (ctx, i, o, next) => {
 		// Connect to broker
 		ctx.connected = false;
 		const url = ctx.broker.url;
@@ -42,11 +47,7 @@ module.exports = (bus, log) => {
 			ctx.connected = true;
 			next('connected');
 		}).on('error', (err) => {
-			o(['brokerConnect', ctx.clientKey, 'res'], {
-				clientKey: ctx.clientKey,
-				error: err.message
-			});
-			next(null);
+			next(err);
 		});
 	}).state('connected', (ctx, i, o, next) => {
 		// Debug logging
@@ -96,6 +97,14 @@ module.exports = (bus, log) => {
 			next(null);
 		});
 	}).final((ctx, i, o, end, err) => {
+		// If some error occured, connection establishment failed!
+		if (err instanceof Error) {
+			o(['brokerConnect', ctx.clientKey, 'res'], {
+				clientKey: ctx.clientKey,
+				error: err.message
+			});
+		}
+
 		// TODO: close notify if connected is still true
 		if (ctx.connection) ctx.connection.end(true, () => end());
 	});

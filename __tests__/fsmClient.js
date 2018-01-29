@@ -8,33 +8,48 @@ const mqtt = require('mqtt');
 const fsmClient = require('../fsmClient.js');
 
 describe('state: init', () => {
+	test('get broker config', () => {
+		const CTX = {
+			clientId: 'client',
+			broker: (id) => id
+		};
+		fsmClient().testState('init', CTX);
+		expect(CTX.broker).toEqual(CTX.clientId);
+	});
+	test('handle broker config callback errors', () => {
+		const ERR = new Error('nope');
+		const CTX = {
+			broker: () => { throw ERR; }
+		};
+		const fsm = fsmClient().testState('init', CTX);
+		expect(fsm.next.mock.calls[0][0].message).toEqual(ERR.message);
+	});
 	test('make sure that broker configuration is an object', () => {
 		const CTX = {
-			clientKey: '::1_12345'
+			clientKey: '::1_12345',
+			broker: () => undefined
 		};
-		const bus = new EventEmitter();
-		const res = jest.fn();
-		bus.on(['brokerConnect', CTX.clientKey, 'res'], res);
-		fsmClient(bus).testState('init', CTX);
-		expect(res.mock.calls[0][0]).toMatchObject({
-			clientKey: CTX.clientKey,
-			error: 'No valid configuration given'
-		});
+		const fsm = fsmClient().testState('init', CTX);
+		expect(fsm.next.mock.calls[0][0].message).toEqual('No valid configuration given');
 	});
 	test('make sure that broker configuration has at least an URL', () => {
 		const CTX = {
 			clientKey: '::1_12345',
-			broker: {}
+			broker: () => {}
 		};
-		const bus = new EventEmitter();
-		const res = jest.fn();
-		bus.on(['brokerConnect', CTX.clientKey, 'res'], res);
-		fsmClient(bus).testState('init', CTX);
-		expect(res.mock.calls[0][0]).toMatchObject({
-			clientKey: CTX.clientKey,
-			error: 'No valid configuration given'
-		});
+		const fsm = fsmClient().testState('init', CTX);
+		expect(fsm.next.mock.calls[0][0].message).toEqual('No valid configuration given');
 	});
+	test('go to connect state', () => {
+		const CTX = {
+			broker: () => ({ url: '' })
+		};
+		const fsm = fsmClient().testState('init', CTX);
+		expect(fsm.next.mock.calls[0][0]).toEqual('connect');
+	});
+});
+
+describe('state: connect', () => {
 	test('start connection to the broker with will', () => {
 		const CTX = {
 			broker: {
@@ -48,7 +63,7 @@ describe('state: init', () => {
 			cleanSession: true,
 			clientId: 'client'
 		};
-		fsmClient().testState('init', CTX);
+		fsmClient().testState('connect', CTX);
 		expect(mqtt.connect.mock.calls[0][0]).toEqual('http://test');
 		expect(mqtt.connect.mock.calls[0][1]).toMatchObject({
 			ca: Buffer.from('a'),
@@ -73,7 +88,7 @@ describe('state: init', () => {
 			cleanSession: true,
 			clientId: 'client'
 		};
-		fsmClient().testState('init', CTX);
+		fsmClient().testState('connect', CTX);
 		expect(mqtt.connect.mock.calls[0][0]).toEqual('http://test');
 		expect(mqtt.connect.mock.calls[0][1]).toMatchObject({
 			ca: Buffer.from('a'),
@@ -90,7 +105,7 @@ describe('state: init', () => {
 		const bus = new EventEmitter();
 		const res = jest.fn();
 		bus.on(['brokerConnect', CTX.clientKey, 'res'], res);
-		const fsm = fsmClient(bus).testState('init', CTX);
+		const fsm = fsmClient(bus).testState('connect', CTX);
 		mqtt._client.emit('connect', {
 			cmd: 'connack',
 			returnCode: 0,
@@ -110,17 +125,10 @@ describe('state: init', () => {
 			clientKey: '::1_12345'
 		};
 		const ERR = new Error('nope');
-		const bus = new EventEmitter();
-		const res = jest.fn();
-		bus.on(['brokerConnect', CTX.clientKey, 'res'], res);
-		const fsm = fsmClient(bus).testState('init', CTX);
+		const fsm = fsmClient().testState('connect', CTX);
 		mqtt._client.emit('error', ERR);
-		expect(res.mock.calls[0][0]).toMatchObject({
-			clientKey: CTX.clientKey,
-			error: ERR.message
-		});
 		expect(CTX.connected).toBe(false);
-		expect(fsm.next.mock.calls[0][0]).toBe(null);
+		expect(fsm.next.mock.calls[0][0].message).toEqual(ERR.message);
 	});
 });
 
@@ -247,5 +255,19 @@ describe('final', () => {
 		expect(CTX.connection.end.mock.calls.length).toEqual(1);
 		CTX.connection.end.mock.calls[0][1]();
 		expect(fsm.next.mock.calls.length).toEqual(1);
+	});
+	test('forward errors to core', () => {
+		const CTX = {
+			clientKey: '::1_12345'
+		};
+		const ERR = new Error('test');
+		const bus = new EventEmitter();
+		const res = jest.fn();
+		bus.on(['brokerConnect', CTX.clientKey, 'res'], res);
+		fsmClient(bus).testState('_final', CTX, ERR);
+		expect(res.mock.calls[0][0]).toMatchObject({
+			clientKey: CTX.clientKey,
+			error: ERR.message
+		});
 	});
 });

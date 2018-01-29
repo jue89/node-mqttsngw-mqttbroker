@@ -30,7 +30,7 @@ describe('state: listening', () => {
 		fsmMain(bus).testState('listening', CTX);
 		bus.emit(['brokerConnect', CONNECT.clientKey, 'req'], Object.assign({}, CONNECT));
 		expect(fsmClient._run.mock.calls[0][0]).toMatchObject(Object.assign({
-			broker: CONNECT.clientId
+			broker: CTX.broker
 		}, CONNECT));
 	});
 });

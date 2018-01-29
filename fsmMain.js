@@ -10,7 +10,7 @@ module.exports = (bus, log) => {
 	}).state('listening', (ctx, i, o, next) => {
 		// Listen for broker connect messages
 		i(['brokerConnect', '*', 'req'], (data) => {
-			data.broker = ctx.broker(data.clientId);
+			data.broker = ctx.broker;
 			clientFactory.run(data);
 		});
 	});
