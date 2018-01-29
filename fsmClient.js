@@ -66,7 +66,26 @@ module.exports = (bus, log) => {
 			});
 		}
 
-		// TODO: subscribe
+		// React to subscription requests
+		i(['brokerSubscribe', ctx.clientKey, 'req'], (req) => {
+			ctx.connection.subscribe(req.topic, { qos: req.qos }, (err, ack) => {
+				if (err) {
+					o(['brokerSubscribe', ctx.clientKey, 'res'], {
+						clientKey: ctx.clientKey,
+						msgId: req.msgId,
+						error: err.message
+					});
+				} else {
+					o(['brokerSubscribe', ctx.clientKey, 'res'], {
+						clientKey: ctx.clientKey,
+						msgId: req.msgId,
+						qos: ack.qos,
+						error: null
+					});
+				}
+			});
+		});
+
 		// TODO: unsubscribe
 		// TODO: publish to broker
 		// TODO: publish from broker

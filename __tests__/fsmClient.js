@@ -180,6 +180,61 @@ describe('state: connected', () => {
 		expect(CTX.connected).toBe(false);
 		expect(fsm.next.mock.calls[0][0]).toBe(null);
 	});
+	test('subscribe to topic', () => {
+		const CTX = {
+			clientKey: '::1_12345',
+			connection: mqtt.connect()
+		};
+		const SUB = {
+			clientKey: CTX.clientKey,
+			msgId: 123,
+			topic: 'test',
+			qos: 1
+		};
+		const bus = new EventEmitter();
+		const res = jest.fn();
+		bus.on(['brokerSubscribe', CTX.clientKey, 'res'], res);
+		fsmClient(bus, {}).testState('connected', CTX);
+		bus.emit(['brokerSubscribe', CTX.clientKey, 'req'], SUB);
+		expect(mqtt._client.subscribe.mock.calls[0][0]).toEqual(SUB.topic);
+		expect(mqtt._client.subscribe.mock.calls[0][1]).toMatchObject({
+			qos: SUB.qos
+		});
+		mqtt._client.subscribe.mock.calls[0][2](null, { qos: SUB.qos });
+		expect(res.mock.calls[0][0]).toMatchObject({
+			clientKey: CTX.clientKey,
+			msgId: SUB.msgId,
+			qos: SUB.qos,
+			error: null
+		});
+	});
+	test('report subscription error', () => {
+		const CTX = {
+			clientKey: '::1_12345',
+			connection: mqtt.connect()
+		};
+		const SUB = {
+			clientKey: CTX.clientKey,
+			msgId: 123,
+			topic: 'test',
+			qos: 1
+		};
+		const bus = new EventEmitter();
+		const res = jest.fn();
+		bus.on(['brokerSubscribe', CTX.clientKey, 'res'], res);
+		fsmClient(bus, {}).testState('connected', CTX);
+		bus.emit(['brokerSubscribe', CTX.clientKey, 'req'], SUB);
+		expect(mqtt._client.subscribe.mock.calls[0][0]).toEqual(SUB.topic);
+		expect(mqtt._client.subscribe.mock.calls[0][1]).toMatchObject({
+			qos: SUB.qos
+		});
+		mqtt._client.subscribe.mock.calls[0][2](new Error('nope'));
+		expect(res.mock.calls[0][0]).toMatchObject({
+			clientKey: CTX.clientKey,
+			msgId: SUB.msgId,
+			error: 'nope'
+		});
+	});
 });
 
 describe('final', () => {
