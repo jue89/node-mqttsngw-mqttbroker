@@ -8,6 +8,33 @@ const mqtt = require('mqtt');
 const fsmClient = require('../fsmClient.js');
 
 describe('state: init', () => {
+	test('make sure that broker configuration is an object', () => {
+		const CTX = {
+			clientKey: '::1_12345'
+		};
+		const bus = new EventEmitter();
+		const res = jest.fn();
+		bus.on(['brokerConnect', CTX.clientKey, 'res'], res);
+		fsmClient(bus).testState('init', CTX);
+		expect(res.mock.calls[0][0]).toMatchObject({
+			clientKey: CTX.clientKey,
+			error: 'No valid configuration given'
+		});
+	});
+	test('make sure that broker configuration has at least an URL', () => {
+		const CTX = {
+			clientKey: '::1_12345',
+			broker: {}
+		};
+		const bus = new EventEmitter();
+		const res = jest.fn();
+		bus.on(['brokerConnect', CTX.clientKey, 'res'], res);
+		fsmClient(bus).testState('init', CTX);
+		expect(res.mock.calls[0][0]).toMatchObject({
+			clientKey: CTX.clientKey,
+			error: 'No valid configuration given'
+		});
+	});
 	test('start connection to the broker with will', () => {
 		const CTX = {
 			broker: {
@@ -57,7 +84,7 @@ describe('state: init', () => {
 	});
 	test('go in connected state if broker accepted our connection', () => {
 		const CTX = {
-			broker: {},
+			broker: { url: 'test' },
 			clientKey: '::1_12345'
 		};
 		const bus = new EventEmitter();
@@ -79,7 +106,7 @@ describe('state: init', () => {
 	});
 	test('forward connection errors', () => {
 		const CTX = {
-			broker: {},
+			broker: { url: 'test' },
 			clientKey: '::1_12345'
 		};
 		const ERR = new Error('nope');
@@ -99,7 +126,10 @@ describe('state: init', () => {
 
 describe('final', () => {
 	test('close connection to broker', () => {
-		const CTX = { connection: { end: jest.fn() } };
+		const CTX = {
+			broker: { url: 'test' },
+			connection: { end: jest.fn() }
+		};
 		const fsm = fsmClient().testState('_final', CTX);
 		expect(CTX.connection.end.mock.calls.length).toEqual(1);
 		CTX.connection.end.mock.calls[0][1]();

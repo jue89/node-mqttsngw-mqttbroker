@@ -8,6 +8,15 @@ module.exports = (bus, log) => {
 		output: bus,
 		firstState: 'init'
 	}).state('init', (ctx, i, o, next) => {
+		// Make sure configuration is valid
+		if (typeof ctx.broker !== 'object' || typeof ctx.broker.url !== 'string') {
+			o(['brokerConnect', ctx.clientKey, 'res'], {
+				clientKey: ctx.clientKey,
+				error: 'No valid configuration given'
+			});
+			return next(null);
+		}
+
 		// Connect to broker
 		ctx.connected = false;
 		const url = ctx.broker.url;
@@ -40,7 +49,7 @@ module.exports = (bus, log) => {
 			next(null);
 		});
 	}).final((ctx, i, o, end, err) => {
-		// TODO: close notify
-		ctx.connection.end(true, () => end());
+		// TODO: close notify if connected is still true
+		if (ctx.connection) ctx.connection.end(true, () => end());
 	});
 };
