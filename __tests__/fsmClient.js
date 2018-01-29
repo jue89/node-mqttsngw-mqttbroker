@@ -124,6 +124,64 @@ describe('state: init', () => {
 	});
 });
 
+describe('state: connected', () => {
+	test('log state change to offline', () => {
+		const LOG = {
+			warn: jest.fn()
+		};
+		const CONNECTION = new EventEmitter();
+		const CTX = {
+			clientKey: '::1_12345',
+			connected: true,
+			connection: CONNECTION
+		};
+		const bus = new EventEmitter();
+		fsmClient(bus, LOG).testState('connected', CTX);
+		CONNECTION.connected = false;
+		CTX.connection.emit('offline');
+		expect(LOG.warn.mock.calls[0][0]).toEqual('Connection state changed: offline');
+		expect(LOG.warn.mock.calls[0][1]).toMatchObject({
+			clientKey: CTX.clientKey,
+			message_id: '8badd8119b8a47d085ccd8b4a8217dd2',
+			connected: false
+		});
+	});
+	test('log state change to online', () => {
+		const LOG = {
+			warn: jest.fn()
+		};
+		const CONNECTION = new EventEmitter();
+		const CTX = {
+			clientKey: '::1_12345',
+			connected: true,
+			connection: CONNECTION
+		};
+		const bus = new EventEmitter();
+		fsmClient(bus, LOG).testState('connected', CTX);
+		CONNECTION.connected = true;
+		CTX.connection.emit('connect');
+		expect(LOG.warn.mock.calls[0][0]).toEqual('Connection state changed: online');
+		expect(LOG.warn.mock.calls[0][1]).toMatchObject({
+			clientKey: CTX.clientKey,
+			message_id: '8badd8119b8a47d085ccd8b4a8217dd2',
+			connected: true
+		});
+	});
+	test('close connection if a disconnect call is received', () => {
+		const CTX = {
+			clientKey: '::1_12345',
+			connected: true
+		};
+		const bus = new EventEmitter();
+		const fsm = fsmClient(bus, {}).testState('connected', CTX);
+		bus.emit(['brokerDisconnect', CTX.clientKey, 'call'], {
+			clientKey: CTX.clientKey
+		});
+		expect(CTX.connected).toBe(false);
+		expect(fsm.next.mock.calls[0][0]).toBe(null);
+	});
+});
+
 describe('final', () => {
 	test('close connection to broker', () => {
 		const CTX = {

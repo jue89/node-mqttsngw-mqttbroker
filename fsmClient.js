@@ -48,6 +48,34 @@ module.exports = (bus, log) => {
 			});
 			next(null);
 		});
+	}).state('connected', (ctx, i, o, next) => {
+		// Debug logging
+		if (log.warn) {
+			const logConnectionState = (state) => log.warn(
+				`Connection state changed: ${state ? 'online' : 'offline'}`,
+				{
+					clientKey: ctx.clientKey,
+					message_id: '8badd8119b8a47d085ccd8b4a8217dd2',
+					connected: state
+				}
+			);
+			ctx.connection.on('offline', () => {
+				logConnectionState(ctx.connection.connected);
+			}).on('connect', () => {
+				logConnectionState(ctx.connection.connected);
+			});
+		}
+
+		// TODO: subscribe
+		// TODO: unsubscribe
+		// TODO: publish to broker
+		// TODO: publish from broker
+
+		// React to disconnect calls
+		i(['brokerDisconnect', ctx.clientKey, 'call'], () => {
+			ctx.connected = false;
+			next(null);
+		});
 	}).final((ctx, i, o, end, err) => {
 		// TODO: close notify if connected is still true
 		if (ctx.connection) ctx.connection.end(true, () => end());
