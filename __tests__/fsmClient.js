@@ -178,7 +178,8 @@ describe('state: connected', () => {
 	test('close connection if a disconnect call is received', () => {
 		const CTX = {
 			clientKey: '::1_12345',
-			connected: true
+			connected: true,
+			connection: {}
 		};
 		const bus = new EventEmitter();
 		const fsm = fsmClient(bus, {}).testState('connected', CTX);
@@ -242,6 +243,139 @@ describe('state: connected', () => {
 			msgId: SUB.msgId,
 			error: 'nope'
 		});
+	});
+	test('publish to broker', () => {
+		const CTX = {
+			clientKey: '::1_12345',
+			connection: mqtt.connect()
+		};
+		const PUB = {
+			clientKey: CTX.clientKey,
+			msgId: 123,
+			topic: 'test',
+			qos: 1,
+			retain: true,
+			payload: Buffer.from('a')
+		};
+		const bus = new EventEmitter();
+		const res = jest.fn();
+		bus.on(['brokerPublishFromClient', CTX.clientKey, 'res'], res);
+		fsmClient(bus, {}).testState('connected', CTX);
+		bus.emit(['brokerPublishFromClient', CTX.clientKey, 'req'], PUB);
+		expect(mqtt._client.publish.mock.calls[0][0]).toEqual(PUB.topic);
+		expect(mqtt._client.publish.mock.calls[0][1]).toBe(PUB.payload);
+		expect(mqtt._client.publish.mock.calls[0][2]).toMatchObject({
+			qos: PUB.qos,
+			retain: PUB.retain
+		});
+		mqtt._client.publish.mock.calls[0][3](null);
+		expect(res.mock.calls[0][0]).toMatchObject({
+			clientKey: CTX.clientKey,
+			msgId: PUB.msgId,
+			error: null
+		});
+	});
+	test('publish to broker error', () => {
+		const CTX = {
+			clientKey: '::1_12345',
+			connection: mqtt.connect()
+		};
+		const PUB = {
+			clientKey: CTX.clientKey,
+			msgId: 123,
+			topic: 'test',
+			qos: 1,
+			retain: true,
+			payload: Buffer.from('a')
+		};
+		const bus = new EventEmitter();
+		const res = jest.fn();
+		bus.on(['brokerPublishFromClient', CTX.clientKey, 'res'], res);
+		fsmClient(bus, {}).testState('connected', CTX);
+		bus.emit(['brokerPublishFromClient', CTX.clientKey, 'req'], PUB);
+		expect(mqtt._client.publish.mock.calls[0][0]).toEqual(PUB.topic);
+		expect(mqtt._client.publish.mock.calls[0][1]).toBe(PUB.payload);
+		expect(mqtt._client.publish.mock.calls[0][2]).toMatchObject({
+			qos: PUB.qos,
+			retain: PUB.retain
+		});
+		const ERR = new Error('nope');
+		mqtt._client.publish.mock.calls[0][3](ERR);
+		expect(res.mock.calls[0][0]).toMatchObject({
+			clientKey: CTX.clientKey,
+			msgId: PUB.msgId,
+			error: ERR.message
+		});
+	});
+	test('publish to client', () => {
+		const CTX = {
+			clientKey: '::1_12345',
+			connection: mqtt.connect()
+		};
+		const PUB = {
+			cmd: 'publish',
+			messageId: 42,
+			qos: 1,
+			dup: false,
+			topic: 'test',
+			payload: Buffer.from('test'),
+			retain: false
+		};
+		const bus = new EventEmitter();
+		const req = jest.fn();
+		bus.on(['brokerPublishToClient', CTX.clientKey, 'req'], req);
+		const cb = jest.fn();
+		fsmClient(bus, {}).testState('connected', CTX);
+		CTX.connection.handleMessage(PUB, cb);
+		expect(req.mock.calls[0][0]).toMatchObject({
+			clientKey: CTX.clientKey,
+			msgId: PUB.messageId,
+			topic: PUB.topic,
+			payload: PUB.payload,
+			qos: PUB.qos
+		});
+		expect(cb.mock.calls.length).toEqual(0);
+		bus.emit(['brokerPublishToClient', CTX.clientKey, 'res'], {
+			clientKey: CTX.clientKey,
+			msgId: PUB.messageId,
+			error: null
+		});
+		expect(cb.mock.calls[0][0]).toBe(null);
+	});
+	test('publish to client error', () => {
+		const CTX = {
+			clientKey: '::1_12345',
+			connection: mqtt.connect()
+		};
+		const PUB = {
+			cmd: 'publish',
+			messageId: 42,
+			qos: 1,
+			dup: false,
+			topic: 'test',
+			payload: Buffer.from('test'),
+			retain: false
+		};
+		const bus = new EventEmitter();
+		const req = jest.fn();
+		bus.on(['brokerPublishToClient', CTX.clientKey, 'req'], req);
+		const cb = jest.fn();
+		fsmClient(bus, {}).testState('connected', CTX);
+		CTX.connection.handleMessage(PUB, cb);
+		expect(req.mock.calls[0][0]).toMatchObject({
+			clientKey: CTX.clientKey,
+			msgId: PUB.messageId,
+			topic: PUB.topic,
+			payload: PUB.payload,
+			qos: PUB.qos
+		});
+		expect(cb.mock.calls.length).toEqual(0);
+		bus.emit(['brokerPublishToClient', CTX.clientKey, 'res'], {
+			clientKey: CTX.clientKey,
+			msgId: PUB.messageId,
+			error: 'nope'
+		});
+		expect(cb.mock.calls[0][0].message).toBe('nope');
 	});
 });
 

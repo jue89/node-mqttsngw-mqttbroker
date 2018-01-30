@@ -88,8 +88,36 @@ module.exports = (bus, log) => {
 		});
 
 		// TODO: unsubscribe
-		// TODO: publish to broker
-		// TODO: publish from broker
+
+		// Publish Client -> Broker
+		i(['brokerPublishFromClient', ctx.clientKey, 'req'], (data) => {
+			ctx.connection.publish(data.topic, data.payload, {
+				qos: data.qos,
+				retain: data.retain
+			}, (err) => {
+				o(['brokerPublishFromClient', ctx.clientKey, 'res'], {
+					clientKey: ctx.clientKey,
+					msgId: data.msgId,
+					error: (err) ? err.message : null
+				});
+			});
+		});
+
+		// Publish Broker -> Client
+		ctx.connection.handleMessage = (msg, cb) => {
+			o(['brokerPublishToClient', ctx.clientKey, 'req'], {
+				clientKey: ctx.clientKey,
+				msgId: msg.messageId,
+				qos: msg.qos,
+				topic: msg.topic,
+				payload: msg.payload
+			});
+			// TODO: clean this one up. Little hack.
+			bus.once(['brokerPublishToClient', ctx.clientKey, 'res'], (data) => {
+				if (data.error) cb(new Error(data.error));
+				else cb(null);
+			});
+		};
 
 		// React to disconnect calls
 		i(['brokerDisconnect', ctx.clientKey, 'call'], () => {
