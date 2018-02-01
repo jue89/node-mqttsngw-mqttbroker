@@ -314,7 +314,6 @@ describe('state: connected', () => {
 		};
 		const PUB = {
 			cmd: 'publish',
-			messageId: 42,
 			qos: 1,
 			dup: false,
 			topic: 'test',
@@ -329,7 +328,7 @@ describe('state: connected', () => {
 		CTX.connection.handleMessage(PUB, cb);
 		expect(req.mock.calls[0][0]).toMatchObject({
 			clientKey: CTX.clientKey,
-			msgId: PUB.messageId,
+			msgId: 0,
 			topic: PUB.topic,
 			payload: PUB.payload,
 			qos: PUB.qos
@@ -337,7 +336,7 @@ describe('state: connected', () => {
 		expect(cb.mock.calls.length).toEqual(0);
 		bus.emit(['brokerPublishToClient', CTX.clientKey, 'res'], {
 			clientKey: CTX.clientKey,
-			msgId: PUB.messageId,
+			msgId: 0,
 			error: null
 		});
 		expect(cb.mock.calls[0][0]).toBe(null);
@@ -349,7 +348,6 @@ describe('state: connected', () => {
 		};
 		const PUB = {
 			cmd: 'publish',
-			messageId: 42,
 			qos: 1,
 			dup: false,
 			topic: 'test',
@@ -364,7 +362,7 @@ describe('state: connected', () => {
 		CTX.connection.handleMessage(PUB, cb);
 		expect(req.mock.calls[0][0]).toMatchObject({
 			clientKey: CTX.clientKey,
-			msgId: PUB.messageId,
+			msgId: 0,
 			topic: PUB.topic,
 			payload: PUB.payload,
 			qos: PUB.qos
@@ -372,7 +370,7 @@ describe('state: connected', () => {
 		expect(cb.mock.calls.length).toEqual(0);
 		bus.emit(['brokerPublishToClient', CTX.clientKey, 'res'], {
 			clientKey: CTX.clientKey,
-			msgId: PUB.messageId,
+			msgId: 0,
 			error: 'nope'
 		});
 		expect(cb.mock.calls[0][0].message).toBe('nope');

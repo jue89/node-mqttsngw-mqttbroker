@@ -1,6 +1,11 @@
 const FSM = require('edfsm');
 const mqtt = require('mqtt');
 module.exports = (bus, log) => {
+	let msgId = 0;
+	const genMsgId = () => {
+		if (msgId === 65536) msgId = 0;
+		return msgId++;
+	};
 	return FSM({
 		fsmName: '[MQTTBroker] Client',
 		log: log,
@@ -107,16 +112,18 @@ module.exports = (bus, log) => {
 		ctx.connection.handleMessage = (msg, cb) => {
 			o(['brokerPublishToClient', ctx.clientKey, 'req'], {
 				clientKey: ctx.clientKey,
-				msgId: msg.messageId,
+				msgId: genMsgId(),
 				qos: msg.qos,
 				topic: msg.topic,
 				payload: msg.payload
 			});
 			// TODO: clean this one up. Little hack.
-			bus.once(['brokerPublishToClient', ctx.clientKey, 'res'], (data) => {
+			const handle = (data) => {
+				bus.removeListener(['brokerPublishToClient', ctx.clientKey, 'res'], handle);
 				if (data.error) cb(new Error(data.error));
 				else cb(null);
-			});
+			};
+			bus.on(['brokerPublishToClient', ctx.clientKey, 'res'], handle);
 		};
 
 		// React to disconnect calls
