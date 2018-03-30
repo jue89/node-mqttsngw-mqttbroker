@@ -54,6 +54,8 @@ module.exports = (bus, log) => {
 		}).on('error', (err) => {
 			next(err);
 		});
+
+		next.timeout(5000, new Error('Connection timeout'));
 	}).state('connected', (ctx, i, o, next) => {
 		// Debug logging
 		if (log.warn) {
