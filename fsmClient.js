@@ -97,7 +97,24 @@ module.exports = (bus, log) => {
 			});
 		});
 
-		// TODO: unsubscribe
+		// React to unsubscription requests
+		i(['brokerUnsubscribe', ctx.clientKey, 'req'], (req) => {
+			ctx.connection.unsubscribe(req.topic, (err) => {
+				if (err) {
+					o(['brokerUnsubscribe', ctx.clientKey, 'res'], {
+						clientKey: ctx.clientKey,
+						msgId: req.msgId,
+						error: err.message
+					});
+				} else {
+					o(['brokerUnsubscribe', ctx.clientKey, 'res'], {
+						clientKey: ctx.clientKey,
+						msgId: req.msgId,
+						error: null
+					});
+				}
+			});
+		});
 
 		// Publish Client -> Broker
 		i(['brokerPublishFromClient', ctx.clientKey, 'req'], (data) => {

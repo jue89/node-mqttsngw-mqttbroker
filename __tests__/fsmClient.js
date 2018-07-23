@@ -255,6 +255,51 @@ describe('state: connected', () => {
 			error: 'nope'
 		});
 	});
+	test('unsubscribe from topic', () => {
+		const CTX = {
+			clientKey: '::1_12345',
+			connection: mqtt.connect()
+		};
+		const SUB = {
+			clientKey: CTX.clientKey,
+			msgId: 123,
+			topic: 'test'
+		};
+		const bus = new EventEmitter();
+		const res = jest.fn();
+		bus.on(['brokerUnsubscribe', CTX.clientKey, 'res'], res);
+		fsmClient(bus, {}).testState('connected', CTX);
+		bus.emit(['brokerUnsubscribe', CTX.clientKey, 'req'], SUB);
+		expect(mqtt._client.unsubscribe.mock.calls[0][0]).toEqual(SUB.topic);
+		mqtt._client.unsubscribe.mock.calls[0][1](null);
+		expect(res.mock.calls[0][0]).toMatchObject({
+			clientKey: CTX.clientKey,
+			msgId: SUB.msgId,
+			error: null
+		});
+	});
+	test('report desubscription error', () => {
+		const CTX = {
+			clientKey: '::1_12345',
+			connection: mqtt.connect()
+		};
+		const SUB = {
+			clientKey: CTX.clientKey,
+			msgId: 123,
+			topic: 'test'
+		};
+		const bus = new EventEmitter();
+		const res = jest.fn();
+		bus.on(['brokerUnsubscribe', CTX.clientKey, 'res'], res);
+		fsmClient(bus, {}).testState('connected', CTX);
+		bus.emit(['brokerUnsubscribe', CTX.clientKey, 'req'], SUB);
+		mqtt._client.unsubscribe.mock.calls[0][1](new Error('nope'));
+		expect(res.mock.calls[0][0]).toMatchObject({
+			clientKey: CTX.clientKey,
+			msgId: SUB.msgId,
+			error: 'nope'
+		});
+	});
 	test('publish to broker', () => {
 		const CTX = {
 			clientKey: '::1_12345',
