@@ -43,17 +43,20 @@ module.exports = (bus, log) => {
 		}, ctx.broker));
 
 		// Listen for mqtt connection events
-		ctx.connection.on('connect', (connack) => {
+		const onConnect = (connack) => {
 			o(['brokerConnect', ctx.clientKey, 'res'], {
 				clientKey: ctx.clientKey,
 				error: null,
 				sessionResumed: connack.sessionPresent
 			});
 			ctx.connected = true;
+			ctx.connection.removeListener('connect', onConnect);
+			ctx.connection.removeListener('error', onError);
 			next('connected');
-		}).on('error', (err) => {
-			next(err);
-		});
+		};
+		ctx.connection.on('connect', onConnect);
+		const onError = (err) => next(err);
+		ctx.connection.on('error', onError);
 
 		next.timeout(5000, new Error('Connection timeout'));
 	}).state('connected', (ctx, i, o, next) => {

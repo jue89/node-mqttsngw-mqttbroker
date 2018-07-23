@@ -119,6 +119,17 @@ describe('state: connect', () => {
 		expect(CTX.connected).toBe(true);
 		expect(fsm.next.mock.calls[0][0]).toEqual('connected');
 	});
+	test('remove listener once the connection has been established', () => {
+		const CTX = {
+			broker: { url: 'test' },
+			clientKey: '::1_12345'
+		};
+		const bus = new EventEmitter();
+		const fsm = fsmClient(bus).testState('connect', CTX);
+		mqtt._client.emit('connect', {});
+		mqtt._client.emit('connect', {});
+		expect(fsm.next.mock.calls.length).toBe(1);
+	});
 	test('forward connection errors', () => {
 		const CTX = {
 			broker: { url: 'test' },
