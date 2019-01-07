@@ -58,7 +58,7 @@ module.exports = (bus, log) => {
 		const onError = (err) => next(err);
 		ctx.connection.on('error', onError);
 
-		next.timeout(5000, new Error('Connection timeout'));
+		next.timeout(9500, new Error('Connection timeout'));
 	}).state('connected', (ctx, i, o, next) => {
 		// Debug logging
 		if (log.warn) {
