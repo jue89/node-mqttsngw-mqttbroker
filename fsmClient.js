@@ -43,19 +43,22 @@ module.exports = (bus, log) => {
 		}, ctx.broker));
 
 		// Listen for mqtt connection events
-		ctx.connection.on('connect', (connack) => {
+		const onConnect = (connack) => {
 			o(['brokerConnect', ctx.clientKey, 'res'], {
 				clientKey: ctx.clientKey,
 				error: null,
 				sessionResumed: connack.sessionPresent
 			});
 			ctx.connected = true;
+			ctx.connection.removeListener('connect', onConnect);
+			ctx.connection.removeListener('error', onError);
 			next('connected');
-		}).on('error', (err) => {
-			next(err);
-		});
+		};
+		ctx.connection.on('connect', onConnect);
+		const onError = (err) => next(err);
+		ctx.connection.on('error', onError);
 
-		next.timeout(5000, new Error('Connection timeout'));
+		next.timeout(9500, new Error('Connection timeout'));
 	}).state('connected', (ctx, i, o, next) => {
 		// Debug logging
 		if (log.warn) {
@@ -94,7 +97,24 @@ module.exports = (bus, log) => {
 			});
 		});
 
-		// TODO: unsubscribe
+		// React to unsubscription requests
+		i(['brokerUnsubscribe', ctx.clientKey, 'req'], (req) => {
+			ctx.connection.unsubscribe(req.topic, (err) => {
+				if (err) {
+					o(['brokerUnsubscribe', ctx.clientKey, 'res'], {
+						clientKey: ctx.clientKey,
+						msgId: req.msgId,
+						error: err.message
+					});
+				} else {
+					o(['brokerUnsubscribe', ctx.clientKey, 'res'], {
+						clientKey: ctx.clientKey,
+						msgId: req.msgId,
+						error: null
+					});
+				}
+			});
+		});
 
 		// Publish Client -> Broker
 		i(['brokerPublishFromClient', ctx.clientKey, 'req'], (data) => {

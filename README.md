@@ -41,6 +41,7 @@ Several events are consumed and emitted by the *MQTTBroker* module on the event 
 | ------------------------------ | ---------------------- | ----------- |
 | brokerConnect,*,req            | [MQTTBroker] Main      | Connection request |
 | brokerSubscribe,*,req          | [MQTTBroker] Client    | Request subscription to a topic |
+| brokerUnsubscribe,*,req        | [MQTTBroker] Client    | Request unsubscribing a topic |
 | brokerPublishFromClient,*,req  | [MQTTBroker] Client    | A sensors publishes a message to the broker |
 | brokerPublishToClient,*,res    | [MQTTBroker] Client    | Response whether a message has been published to a client |
 | brokerDisconnect,*,call        | [MQTTBroker] Client    | Disconnect from the broker |
@@ -52,6 +53,7 @@ Several events are consumed and emitted by the *MQTTBroker* module on the event 
 | ------------------------------ | ---------------------- | ----------- |
 | brokerConnect,*,res            | [MQTTBroker] Client    | Response to a connection request |
 | brokerSubscribe,*,res          | [MQTTBroker] Client    | Response to a subscription request |
+| brokerUnsubscribe,*,res        | [MQTTBroker] Client    | Response to a unsubscribe request |
 | brokerPublishFromClient,*,res  | [MQTTBroker] Client    | Response whether a message has been published to the broker |
 | brokerPublishToClient,*,req    | [MQTTBroker] Client    | The broker publishes a message to the client |
 | brokerDisconnect,*,notify      | [MQTTBroker] Client    | Informs the client that the connection has been closed |
