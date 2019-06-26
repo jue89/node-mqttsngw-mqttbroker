@@ -397,6 +397,20 @@ describe('state: connected', () => {
 		});
 		expect(cb.mock.calls[0][0]).toBe(null);
 	});
+	test('suppress handleMessage callback if context has been destroyed in the meantime', () => {
+		const CTX = {
+			clientKey: '::1_12345',
+			connection: mqtt.connect()
+		};
+		const PUB = {};
+		const bus = new EventEmitter();
+		const cb = jest.fn();
+		fsmClient(bus, {}).testState('connected', CTX);
+		CTX.connection.handleMessage(PUB, cb);
+		CTX.connection = null;
+		bus.emit(['brokerPublishToClient', CTX.clientKey, 'res'], {});
+		expect(cb.mock.calls.length).toEqual(0);
+	});
 	test('publish to client error', () => {
 		const CTX = {
 			clientKey: '::1_12345',
@@ -435,14 +449,16 @@ describe('state: connected', () => {
 
 describe('final', () => {
 	test('close connection to broker', () => {
+		const connection = { end: jest.fn() };
 		const CTX = {
 			broker: { url: 'test' },
-			connection: { end: jest.fn() }
+			connection
 		};
 		const fsm = fsmClient().testState('_final', CTX);
-		expect(CTX.connection.end.mock.calls.length).toEqual(1);
-		CTX.connection.end.mock.calls[0][1]();
+		expect(connection.end.mock.calls.length).toEqual(1);
+		connection.end.mock.calls[0][1]();
 		expect(fsm.next.mock.calls.length).toEqual(1);
+		expect(CTX.connection).toBe(null);
 	});
 	test('forward errors to core', () => {
 		const CTX = {

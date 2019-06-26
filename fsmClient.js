@@ -142,6 +142,7 @@ module.exports = (bus, log) => {
 			// TODO: clean this one up. Little hack.
 			const handle = (data) => {
 				bus.removeListener(['brokerPublishToClient', ctx.clientKey, 'res'], handle);
+				if (!ctx.connection) return;
 				if (data.error) cb(new Error(data.error));
 				else cb(null);
 			};
@@ -163,7 +164,11 @@ module.exports = (bus, log) => {
 		}
 
 		// TODO: close notify if connected is still true
-		if (ctx.connection) ctx.connection.end(true, () => end(err));
-		else end();
+		if (ctx.connection) {
+			ctx.connection.end(true, () => end(err));
+			ctx.connection = null;
+		} else {
+			end();
+		}
 	});
 };
