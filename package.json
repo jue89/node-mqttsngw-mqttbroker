@@ -1,6 +1,6 @@
 {
   "name": "mqttsngw-mqttbroker",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "description": "MQTT-SN Gateway: Connection to MQTT Broker",
   "main": "index.js",
   "scripts": {
@@ -25,7 +25,7 @@
   "devDependencies": {
     "eventemitter2": "^5.0.1",
     "happiness": "^10.0.2",
-    "jest": "^22.1.4"
+    "jest": "^24.8.0"
   },
   "happiness": {
     "globals": [
