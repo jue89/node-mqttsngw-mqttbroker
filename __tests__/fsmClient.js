@@ -152,7 +152,8 @@ describe('state: connected', () => {
 		const CTX = {
 			clientKey: '::1_12345',
 			connected: true,
-			connection: CONNECTION
+			connection: CONNECTION,
+			broker: {}
 		};
 		const bus = new EventEmitter();
 		fsmClient(bus, LOG).testState('connected', CTX);
@@ -173,7 +174,8 @@ describe('state: connected', () => {
 		const CTX = {
 			clientKey: '::1_12345',
 			connected: true,
-			connection: CONNECTION
+			connection: CONNECTION,
+			broker: {}
 		};
 		const bus = new EventEmitter();
 		fsmClient(bus, LOG).testState('connected', CTX);
@@ -190,7 +192,8 @@ describe('state: connected', () => {
 		const CTX = {
 			clientKey: '::1_12345',
 			connected: true,
-			connection: {}
+			connection: {},
+			broker: {}
 		};
 		const bus = new EventEmitter();
 		const fsm = fsmClient(bus, {}).testState('connected', CTX);
@@ -203,7 +206,8 @@ describe('state: connected', () => {
 	test('subscribe to topic', () => {
 		const CTX = {
 			clientKey: '::1_12345',
-			connection: mqtt.connect()
+			connection: mqtt.connect(),
+			broker: {}
 		};
 		const SUB = {
 			clientKey: CTX.clientKey,
@@ -231,7 +235,8 @@ describe('state: connected', () => {
 	test('report subscription error', () => {
 		const CTX = {
 			clientKey: '::1_12345',
-			connection: mqtt.connect()
+			connection: mqtt.connect(),
+			broker: {}
 		};
 		const SUB = {
 			clientKey: CTX.clientKey,
@@ -258,7 +263,8 @@ describe('state: connected', () => {
 	test('unsubscribe from topic', () => {
 		const CTX = {
 			clientKey: '::1_12345',
-			connection: mqtt.connect()
+			connection: mqtt.connect(),
+			broker: {}
 		};
 		const SUB = {
 			clientKey: CTX.clientKey,
@@ -281,7 +287,8 @@ describe('state: connected', () => {
 	test('report desubscription error', () => {
 		const CTX = {
 			clientKey: '::1_12345',
-			connection: mqtt.connect()
+			connection: mqtt.connect(),
+			broker: {}
 		};
 		const SUB = {
 			clientKey: CTX.clientKey,
@@ -303,7 +310,8 @@ describe('state: connected', () => {
 	test('publish to broker', () => {
 		const CTX = {
 			clientKey: '::1_12345',
-			connection: mqtt.connect()
+			connection: mqtt.connect(),
+			broker: {}
 		};
 		const PUB = {
 			clientKey: CTX.clientKey,
@@ -334,7 +342,8 @@ describe('state: connected', () => {
 	test('publish to broker error', () => {
 		const CTX = {
 			clientKey: '::1_12345',
-			connection: mqtt.connect()
+			connection: mqtt.connect(),
+			broker: {}
 		};
 		const PUB = {
 			clientKey: CTX.clientKey,
@@ -366,7 +375,8 @@ describe('state: connected', () => {
 	test('publish to client', () => {
 		const CTX = {
 			clientKey: '::1_12345',
-			connection: mqtt.connect()
+			connection: mqtt.connect(),
+			broker: {}
 		};
 		const PUB = {
 			cmd: 'publish',
@@ -400,7 +410,8 @@ describe('state: connected', () => {
 	test('suppress handleMessage callback if context has been destroyed in the meantime', () => {
 		const CTX = {
 			clientKey: '::1_12345',
-			connection: mqtt.connect()
+			connection: mqtt.connect(),
+			broker: {}
 		};
 		const PUB = {};
 		const bus = new EventEmitter();
@@ -414,7 +425,8 @@ describe('state: connected', () => {
 	test('publish to client error', () => {
 		const CTX = {
 			clientKey: '::1_12345',
-			connection: mqtt.connect()
+			connection: mqtt.connect(),
+			broker: {}
 		};
 		const PUB = {
 			cmd: 'publish',
@@ -444,6 +456,22 @@ describe('state: connected', () => {
 			error: 'nope'
 		});
 		expect(cb.mock.calls[0][0].message).toBe('nope');
+	});
+	test('react to broker disconnect if reconnect mechanism is disabled', () => {
+		const CTX = {
+			clientKey: '::1_12345',
+			connection: mqtt.connect(),
+			broker: {reconnectPeriod: 0}
+		};
+		const bus = new EventEmitter();
+		const notify = jest.fn();
+		bus.on(['brokerDisconnect', CTX.clientKey, 'notify'], notify);
+		fsmClient(bus, {}).testState('connected', CTX);
+		CTX.connection.emit('close');
+		expect(CTX.connection).toBe(null);
+		expect(notify.mock.calls[0][0]).toMatchObject({
+			clientKey: CTX.clientKey
+		});
 	});
 });
 

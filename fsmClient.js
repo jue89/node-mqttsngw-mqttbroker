@@ -61,7 +61,7 @@ module.exports = (bus, log) => {
 		next.timeout(9500, new Error('Connection timeout'));
 	}).state('connected', (ctx, i, o, next) => {
 		// Debug logging
-		if (log.warn) {
+		if (log.warn && ctx.broker.reconnectPeriod !== 0) {
 			const logConnectionState = (state) => log.warn(
 				`Connection state changed: ${state ? 'online' : 'offline'}`,
 				{
@@ -74,6 +74,17 @@ module.exports = (bus, log) => {
 				logConnectionState(ctx.connection.connected);
 			}).on('connect', () => {
 				logConnectionState(ctx.connection.connected);
+			});
+		}
+
+		// Listen to close events if reconnect mechanism is disabled
+		if (ctx.broker.reconnectPeriod === 0) {
+			ctx.connection.once('close', () => {
+				o(['brokerDisconnect', ctx.clientKey, 'notify'], {
+					clientKey: ctx.clientKey
+				});
+				ctx.connection = null;
+				next(null);
 			});
 		}
 
