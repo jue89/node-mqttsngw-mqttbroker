@@ -79,13 +79,7 @@ module.exports = (bus, log) => {
 
 		// Listen to close events if reconnect mechanism is disabled
 		if (ctx.broker.reconnectPeriod === 0) {
-			ctx.connection.once('close', () => {
-				o(['brokerDisconnect', ctx.clientKey, 'notify'], {
-					clientKey: ctx.clientKey
-				});
-				ctx.connection = null;
-				next(null);
-			});
+			ctx.connection.once('close', () => next(null));
 		}
 
 		// React to subscription requests
@@ -174,7 +168,14 @@ module.exports = (bus, log) => {
 			});
 		}
 
-		// TODO: close notify if connected is still true
+		// The conection has been closed by server
+		if (ctx.connected) {
+			o(['brokerDisconnect', ctx.clientKey, 'notify'], {
+				clientKey: ctx.clientKey
+			});
+		}
+
+		// Make sure the MQTT connection is closed
 		if (ctx.connection) {
 			ctx.connection.end(true, () => end(err));
 			ctx.connection = null;

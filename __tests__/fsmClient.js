@@ -464,14 +464,9 @@ describe('state: connected', () => {
 			broker: {reconnectPeriod: 0}
 		};
 		const bus = new EventEmitter();
-		const notify = jest.fn();
-		bus.on(['brokerDisconnect', CTX.clientKey, 'notify'], notify);
-		fsmClient(bus, {}).testState('connected', CTX);
+		const fsm = fsmClient(bus, {}).testState('connected', CTX);
 		CTX.connection.emit('close');
-		expect(CTX.connection).toBe(null);
-		expect(notify.mock.calls[0][0]).toMatchObject({
-			clientKey: CTX.clientKey
-		});
+		expect(fsm.next.mock.calls[0][0]).toBe(null);
 	});
 });
 
@@ -500,6 +495,19 @@ describe('final', () => {
 		expect(res.mock.calls[0][0]).toMatchObject({
 			clientKey: CTX.clientKey,
 			error: ERR.message
+		});
+	});
+	test('send notification if connection closed by server', () => {
+		const CTX = {
+			clientKey: '::1_12345',
+			connected: true
+		};
+		const bus = new EventEmitter();
+		const notify = jest.fn();
+		bus.on(['brokerDisconnect', CTX.clientKey, 'notify'], notify);
+		fsmClient(bus).testState('_final', CTX);
+		expect(notify.mock.calls[0][0]).toMatchObject({
+			clientKey: CTX.clientKey
 		});
 	});
 });
