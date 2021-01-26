@@ -1,6 +1,6 @@
 {
   "name": "mqttsngw-mqttbroker",
-  "version": "1.1.1",
+  "version": "1.1.2",
   "description": "MQTT-SN Gateway: Connection to MQTT Broker",
   "main": "index.js",
   "scripts": {
