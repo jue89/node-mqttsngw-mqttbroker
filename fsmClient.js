@@ -137,14 +137,6 @@ module.exports = (bus, log) => {
 
 		// Publish Broker -> Client
 		ctx.connection.handleMessage = (msg, cb) => {
-			o(['brokerPublishToClient', ctx.clientKey, 'req'], {
-				clientKey: ctx.clientKey,
-				msgId: genMsgId(),
-				qos: msg.qos,
-				topic: msg.topic,
-				payload: msg.payload
-			});
-			// TODO: clean this one up. Little hack.
 			const handle = (data) => {
 				bus.removeListener(['brokerPublishToClient', ctx.clientKey, 'res'], handle);
 				if (!ctx.connection) return;
@@ -152,6 +144,13 @@ module.exports = (bus, log) => {
 				else cb(null);
 			};
 			bus.on(['brokerPublishToClient', ctx.clientKey, 'res'], handle);
+			o(['brokerPublishToClient', ctx.clientKey, 'req'], {
+				clientKey: ctx.clientKey,
+				msgId: genMsgId(),
+				qos: msg.qos,
+				topic: msg.topic,
+				payload: msg.payload
+			});
 		};
 
 		// React to disconnect calls

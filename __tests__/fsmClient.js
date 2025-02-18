@@ -387,7 +387,12 @@ describe('state: connected', () => {
 			retain: false
 		};
 		const bus = new EventEmitter();
-		const req = jest.fn();
+		// Make sure instant responses are handled!
+		const req = jest.fn(() => bus.emit(['brokerPublishToClient', CTX.clientKey, 'res'], {
+			clientKey: CTX.clientKey,
+			msgId: 0,
+			error: null
+		}));
 		bus.on(['brokerPublishToClient', CTX.clientKey, 'req'], req);
 		const cb = jest.fn();
 		fsmClient(bus, {}).testState('connected', CTX);
@@ -398,12 +403,6 @@ describe('state: connected', () => {
 			topic: PUB.topic,
 			payload: PUB.payload,
 			qos: PUB.qos
-		});
-		expect(cb.mock.calls.length).toEqual(0);
-		bus.emit(['brokerPublishToClient', CTX.clientKey, 'res'], {
-			clientKey: CTX.clientKey,
-			msgId: 0,
-			error: null
 		});
 		expect(cb.mock.calls[0][0]).toBe(null);
 	});
